@@ -1,0 +1,7 @@
+{
+  "name": "TheGigFinder - Job search App",
+  "description": "An intelligent, interactive job search platform powered by Gemini AI, featuring smart discovery and natural language search capabilities.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
