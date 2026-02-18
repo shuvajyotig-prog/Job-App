@@ -93,10 +93,10 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
 
       // Trigger search immediately
       const performVoiceSearch = async () => {
-        setLoading(true);
+        setLoading(true); // Short loading for UX
         setHasSearched(true);
         const fullQuery = externalParams.location 
-          ? `${externalParams.query} jobs in ${externalParams.location}` 
+          ? `${externalParams.query} ${externalParams.location}` 
           : externalParams.query;
           
         const results = await searchJobsWithGemini(fullQuery, externalParams.filters, userProfile);
@@ -108,21 +108,36 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     }
   }, [externalParams, userProfile]);
 
-  // Initial load
+  // Initial load - removed. We want to start in "Center Mode" waiting for user input.
+  // useEffect(() => {
+  //   if (!externalParams && !hasSearched) {
+  //      handleSearch(true);
+  //   }
+  // }, [userProfile]); 
+
+  // Debounce search for instant feel as user types - ONLY AFTER first search
   useEffect(() => {
-    if (!externalParams && !hasSearched) {
-       handleSearch(true);
-    }
-  }, [userProfile]); 
+    const timer = setTimeout(() => {
+        if (hasSearched && query.length > 0) {
+            // Quiet search (no loading spinner)
+            const fullQuery = location ? `${query} ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
+            searchJobsWithGemini(fullQuery, filters, userProfile).then(results => {
+                setJobs(results);
+            });
+        }
+    }, 300); // 300ms delay
+    return () => clearTimeout(timer);
+  }, [query, location]);
 
   const handleSearch = async (initial = false) => {
-    if (!initial && !query.trim()) return;
+    // If no query and not initial, prompt user or just return (unless filters active)
+    if (!initial && !query.trim() && !location.trim() && activeFilterCount === 0) return;
     
-    setLoading(true);
+    setLoading(true); 
     setHasSearched(true);
     setIsSearchSaved(false);
     
-    const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
+    const fullQuery = location ? `${query} ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
     const results = await searchJobsWithGemini(fullQuery, filters, userProfile);
     setJobs(results);
     setLoading(false);
@@ -133,7 +148,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     setIsFilterOpen(false);
     setLoading(true);
     setIsSearchSaved(false);
-    const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
+    const fullQuery = location ? `${query} ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
     searchJobsWithGemini(fullQuery, tempFilters, userProfile).then(results => {
       setJobs(results);
       setLoading(false);
@@ -154,9 +169,9 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     setIsFilterOpen(false);
     setIsSearchSaved(false);
     
-    // Explicitly search with cleared filters to avoid state race condition
+    // Explicitly search with cleared filters
     setLoading(true);
-    const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
+    const fullQuery = location ? `${query} ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
     searchJobsWithGemini(fullQuery, cleared, userProfile).then(results => {
       setJobs(results);
       setLoading(false);
@@ -202,9 +217,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     setTempFilters(search.filters);
     setShowSavedSearches(false);
 
-    // Trigger Search
     setLoading(true);
-    const fullQuery = search.location ? `${search.query} jobs in ${search.location}` : search.query || (userProfile?.currentRole || "Frontend Developer");
+    const fullQuery = search.location ? `${search.query} ${search.location}` : search.query || (userProfile?.currentRole || "Frontend Developer");
     searchJobsWithGemini(fullQuery, search.filters, userProfile).then(results => {
       setJobs(results);
       setLoading(false);
@@ -237,12 +251,12 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
         newFilters.preferredCompanies = newFilters.preferredCompanies?.filter(c => c !== value);
     }
     setFilters(newFilters);
-    setLoading(true);
+    // setLoading(true);
     setIsSearchSaved(false);
-    const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
+    const fullQuery = location ? `${query} ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
     searchJobsWithGemini(fullQuery, newFilters, userProfile).then(results => {
       setJobs(results);
-      setLoading(false);
+      // setLoading(false);
     });
   };
 
@@ -299,20 +313,22 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     (filters.preferredCompanies?.length || 0);
 
   return (
-    <div className="max-w-5xl mx-auto pb-24 relative">
+    <div className={`transition-all duration-700 ease-in-out relative ${!hasSearched ? 'h-[85vh] flex flex-col justify-center' : 'pb-24'}`}>
       
       {/* Search Header Block */}
-      <div className="bg-white rounded-[2rem] shadow-neo border-2 border-neo-black p-6 mb-10 sticky top-4 z-20">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+      <div className={`bg-white rounded-[2rem] shadow-neo border-2 border-neo-black p-6 transition-all duration-500 z-20 ${!hasSearched ? 'mb-0 scale-100 max-w-4xl mx-auto w-full' : 'mb-10 sticky top-4 max-w-5xl mx-auto'}`}>
+        <div className={`flex flex-col justify-between mb-6 gap-4 transition-all ${!hasSearched ? 'items-center text-center' : 'md:flex-row items-start md:items-center'}`}>
              <div>
-                <h1 className="text-3xl font-display font-black text-neo-black tracking-tight">
+                <h1 className={`font-display font-black text-neo-black tracking-tight transition-all ${!hasSearched ? 'text-5xl md:text-6xl mb-4' : 'text-3xl'}`}>
                 {userProfile?.name ? `Hey ${userProfile.name.split(' ')[0]}!` : 'Find Your Gig'}
                 </h1>
-                <p className="text-slate-500 font-medium mt-1">Ready for your next big move?</p>
+                <p className="text-slate-500 font-medium mt-1">
+                  Searching {new Intl.NumberFormat().format(1200)}+ active jobs instantly.
+                </p>
              </div>
              <div className="hidden md:block">
                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-acid rounded-full border-2 border-neo-black shadow-sm font-bold text-xs">
-                    <Sparkles size={12} fill="black" /> AI Powered
+                    <Sparkles size={12} fill="black" /> Instant RAG Search
                  </div>
              </div>
         </div>
@@ -350,7 +366,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
         </div>
         
         {/* Filter Bar */}
-        <div className="flex flex-wrap items-center gap-3 mt-6 relative">
+        {(hasSearched || query || location) && (
+        <div className="flex flex-wrap items-center gap-3 mt-6 relative animate-in fade-in slide-in-from-top-4">
            <button 
              onClick={openFilters}
              className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-2 rounded-xl transition-all ${
@@ -476,9 +493,10 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
              </button>
            )}
         </div>
+        )}
       </div>
 
-      <div className="space-y-4">
+      <div className={`space-y-4 max-w-5xl mx-auto w-full transition-opacity duration-500 ${hasSearched ? 'opacity-100' : 'opacity-0 hidden'}`}>
          <div className="flex justify-between items-end mb-2 px-2">
             <h2 className="text-base font-black text-neo-black uppercase tracking-wider bg-acid inline-block px-2 transform -rotate-1">
                {loading ? 'Searching...' : `${jobs.length} Results Found`}
