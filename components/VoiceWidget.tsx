@@ -197,16 +197,19 @@ export const VoiceWidget: React.FC<VoiceWidgetProps> = ({ onSearch }) => {
         </div>
       )}
 
-      {/* Recording State Label */}
+      {/* Recording State Label with Tap to Stop */}
       {isRecording && (
         <div className="bg-white/90 backdrop-blur px-4 py-2 rounded-xl shadow-lg border border-red-100 text-sm font-semibold text-slate-700 transition-all animate-in fade-in slide-in-from-right-4 mr-2">
-           <span className="flex items-center gap-2">
-             <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-              </span>
-              Listening...
-           </span>
+           <div className="flex flex-col items-end">
+               <span className="flex items-center gap-2">
+                 <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                  </span>
+                  Listening...
+               </span>
+               <span className="text-xs text-slate-500 mt-1">Tap icon to stop</span>
+           </div>
         </div>
       )}
 

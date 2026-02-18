@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Search, Compass, Bookmark, Settings, LogOut, UserCircle, Briefcase, Zap } from 'lucide-react';
+import { Compass, Bookmark, Settings, UserCircle, Zap, Newspaper } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -20,8 +20,8 @@ interface NavItem {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, savedCount, userName, userAvatar, userRole }) => {
   const navItems: NavItem[] = [
-    { id: 'search', label: 'Gig Search', icon: Search },
-    { id: 'discovery', label: 'Explore', icon: Compass },
+    { id: 'search', label: 'Search & Explore', icon: Compass },
+    { id: 'feed', label: 'Career Feed', icon: Newspaper },
     { id: 'saved', label: 'Stashed', icon: Bookmark, badge: savedCount },
     { id: 'profile', label: 'My Vibe', icon: UserCircle },
   ];

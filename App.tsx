@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { ViewState, Job, UserProfile, VoiceSearchParams } from './types';
 import { Sidebar } from './components/Sidebar';
 import { SearchTab } from './components/SearchTab';
-import { DiscoveryTab } from './components/DiscoveryTab';
 import { JobDetailPanel } from './components/JobDetailPanel';
 import { ProfileTab } from './components/ProfileTab';
-import { Bookmark, Search, Compass, UserCircle } from 'lucide-react'; 
+import { CareerFeedTab } from './components/CareerFeedTab';
+import { Bookmark, Search, UserCircle, Newspaper } from 'lucide-react'; 
 import { JobCard } from './components/JobCard';
 import { VoiceWidget } from './components/VoiceWidget';
 
@@ -21,6 +21,8 @@ const App: React.FC = () => {
     name: 'Arjun Mehta',
     currentRole: 'Senior Frontend Engineer',
     bio: 'Passionate UI/UX specialist building scalable web apps. Looking for challenging roles in Bangalore or Remote.',
+    education: 'B.Tech in Computer Science, IIT Bombay (2018)',
+    experienceSummary: '5 years of experience in React ecosystem. Led a team of 4 at a fintech startup.',
     skills: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS', 'GraphQL'],
     yearsExperience: 5,
     preferences: {
@@ -101,12 +103,8 @@ const App: React.FC = () => {
             />
           )}
 
-          {view === 'discovery' && (
-             <DiscoveryTab 
-                onJobClick={handleJobClick} 
-                userProfile={userProfile} 
-                onDislike={handleDislikeJob}
-             />
+          {view === 'feed' && (
+             <CareerFeedTab />
           )}
 
           {view === 'profile' && (
@@ -139,26 +137,27 @@ const App: React.FC = () => {
 
       <VoiceWidget onSearch={handleVoiceSearch} />
 
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-6 py-2 flex justify-between items-center shadow-lg">
+      {/* Mobile Nav */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-4 py-2 flex justify-between items-center shadow-lg">
          <button 
            onClick={() => setView('search')} 
            className={`flex flex-col items-center p-2 rounded-lg ${view === 'search' ? 'text-blue-600' : 'text-slate-400'}`}
          >
-           <Search size={24} />
+           <Search size={22} />
            <span className="text-[10px] font-medium mt-1">Search</span>
          </button>
          <button 
-           onClick={() => setView('discovery')} 
-           className={`flex flex-col items-center p-2 rounded-lg ${view === 'discovery' ? 'text-blue-600' : 'text-slate-400'}`}
+           onClick={() => setView('feed')} 
+           className={`flex flex-col items-center p-2 rounded-lg ${view === 'feed' ? 'text-blue-600' : 'text-slate-400'}`}
          >
-           <Compass size={24} />
-           <span className="text-[10px] font-medium mt-1">Discover</span>
+           <Newspaper size={22} />
+           <span className="text-[10px] font-medium mt-1">Feed</span>
          </button>
          <button 
            onClick={() => setView('saved')} 
            className={`flex flex-col items-center p-2 rounded-lg ${view === 'saved' ? 'text-blue-600' : 'text-slate-400'} relative`}
          >
-           <Bookmark size={24} />
+           <Bookmark size={22} />
            {savedJobs.length > 0 && (
              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
            )}
@@ -173,7 +172,7 @@ const App: React.FC = () => {
                   <img src={userProfile.avatarUrl} alt="Me" className="w-full h-full object-cover" />
                </div>
             ) : (
-               <UserCircle size={24} />
+               <UserCircle size={22} />
             )}
            <span className="text-[10px] font-medium mt-1">Profile</span>
          </button>

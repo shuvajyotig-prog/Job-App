@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { UserProfile } from '../types';
-import { User, Briefcase, Award, Save, Plus, X, MapPin, Sparkles, Upload, IndianRupee } from 'lucide-react';
+import { User, Briefcase, Award, Save, Plus, X, MapPin, Sparkles, Upload, IndianRupee, FileText, GraduationCap, Loader2, PenTool } from 'lucide-react';
+import { parseResumeText } from '../services/gemini';
 
 interface ProfileTabProps {
   profile: UserProfile;
@@ -11,6 +12,9 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
   const [formData, setFormData] = useState<UserProfile>(profile);
   const [newSkill, setNewSkill] = useState('');
   const [isSaved, setIsSaved] = useState(false);
+  const [isParsing, setIsParsing] = useState(false);
+  const [resumeText, setResumeText] = useState('');
+  const [showResumeEditor, setShowResumeEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -51,6 +55,34 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleResumeParse = async () => {
+      if (!resumeText.trim()) return;
+      
+      setIsParsing(true);
+      try {
+          const parsedData = await parseResumeText(resumeText);
+          
+          setFormData(prev => ({
+              ...prev,
+              name: parsedData.name || prev.name,
+              currentRole: parsedData.currentRole || prev.currentRole,
+              bio: parsedData.bio || prev.bio,
+              education: parsedData.education || prev.education,
+              experienceSummary: parsedData.experienceSummary || prev.experienceSummary,
+              yearsExperience: parsedData.yearsExperience || prev.yearsExperience,
+              skills: parsedData.skills ? Array.from(new Set([...prev.skills, ...parsedData.skills])) : prev.skills
+          }));
+          
+          setShowResumeEditor(false);
+          setResumeText('');
+      } catch (error) {
+          console.error("Parsing failed", error);
+      } finally {
+          setIsParsing(false);
+          setIsSaved(false);
+      }
   };
 
   const handleSave = () => {
@@ -104,6 +136,60 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
         </div>
 
         <div className="p-8 space-y-8">
+
+          {/* Resume Parser Section */}
+          <section className="bg-blue-50 border border-blue-100 rounded-xl p-6 transition-all">
+             <div className="flex justify-between items-start mb-4">
+                 <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <FileText className="text-blue-500" size={20} /> AI Resume Parser
+                 </h2>
+                 <button 
+                   onClick={() => setShowResumeEditor(!showResumeEditor)}
+                   className="text-sm font-semibold text-blue-600 hover:text-blue-800 underline decoration-blue-300 hover:decoration-blue-800"
+                 >
+                   {showResumeEditor ? 'Cancel' : 'Paste Resume Text'}
+                 </button>
+             </div>
+             
+             {!showResumeEditor ? (
+                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                     <p className="text-sm text-slate-600">
+                        Instantly fill your profile by parsing your resume text with Gemini AI.
+                     </p>
+                     <button 
+                        onClick={() => setShowResumeEditor(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 font-bold shadow-sm transition-all whitespace-nowrap"
+                     >
+                        <PenTool size={16} /> Open Editor
+                     </button>
+                 </div>
+             ) : (
+                 <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                    <textarea 
+                       value={resumeText}
+                       onChange={(e) => setResumeText(e.target.value)}
+                       placeholder="Paste your resume content here..."
+                       className="w-full h-48 p-4 rounded-lg border border-blue-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-mono bg-white"
+                    />
+                    <div className="flex justify-end gap-2">
+                        <button 
+                           onClick={() => setShowResumeEditor(false)}
+                           className="px-4 py-2 text-slate-500 hover:bg-slate-100 rounded-lg text-sm font-bold"
+                        >
+                           Cancel
+                        </button>
+                        <button 
+                           onClick={handleResumeParse}
+                           disabled={isParsing || !resumeText.trim()}
+                           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                           {isParsing ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                           {isParsing ? 'Parsing with AI...' : 'Parse Resume'}
+                        </button>
+                    </div>
+                 </div>
+             )}
+          </section>
           
           {/* Basic Info */}
           <section className="space-y-4">
@@ -149,27 +235,48 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
 
           <hr className="border-slate-100" />
 
-          {/* Skills & Experience */}
+          {/* Education & Experience */}
           <section className="space-y-4">
              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-               <Award className="text-purple-500" size={20} /> Skills & Experience
+               <GraduationCap className="text-orange-500" size={20} /> Education & Experience
+             </h2>
+             <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Education</label>
+                <input 
+                  type="text" 
+                  name="education" 
+                  value={formData.education || ''} 
+                  onChange={handleChange}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  placeholder="University, Degree, Year"
+                />
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Experience Summary</label>
+                <textarea 
+                  name="experienceSummary" 
+                  value={formData.experienceSummary || ''} 
+                  onChange={handleChange}
+                  rows={4}
+                  className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
+                  placeholder="Paste your work experience here or upload resume to auto-fill..."
+                />
+             </div>
+          </section>
+
+          <hr className="border-slate-100" />
+
+          {/* Skills */}
+          <section className="space-y-4">
+             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+               <Award className="text-purple-500" size={20} /> Skills
              </h2>
              
              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Years of Experience</label>
-                <input 
-                  type="number" 
-                  name="yearsExperience" 
-                  value={formData.yearsExperience} 
-                  onChange={handleChange}
-                  min="0"
-                  max="50"
-                  className="w-full md:w-32 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                />
-             </div>
-
-             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">Skills</label>
+                <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-slate-700">Skills List</label>
+                    <span className="text-xs text-slate-400">Press Enter to add</span>
+                </div>
                 <div className="flex flex-wrap gap-2 mb-3">
                    {formData.skills.map(skill => (
                       <span key={skill} className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm border border-indigo-100">
@@ -184,7 +291,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
                      value={newSkill}
                      onChange={(e) => setNewSkill(e.target.value)}
                      onKeyDown={addSkill}
-                     placeholder="Type a skill and press Enter (e.g., React, Python)"
+                     placeholder="e.g., React, Python, Leadership"
                      className="flex-1 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                    />
                    <button 
@@ -194,6 +301,18 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
                      <Plus size={20} />
                    </button>
                 </div>
+             </div>
+             <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Years of Experience</label>
+                <input 
+                  type="number" 
+                  name="yearsExperience" 
+                  value={formData.yearsExperience} 
+                  onChange={handleChange}
+                  min="0"
+                  max="50"
+                  className="w-full md:w-32 px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                />
              </div>
           </section>
 

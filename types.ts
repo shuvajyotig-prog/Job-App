@@ -1,3 +1,4 @@
+
 export interface Job {
   id: string;
   title: string;
@@ -20,7 +21,7 @@ export interface JobCategory {
   jobs: Job[];
 }
 
-export type ViewState = 'search' | 'discovery' | 'saved' | 'profile';
+export type ViewState = 'search' | 'saved' | 'feed' | 'profile';
 
 export interface SearchFilters {
   remote: boolean;
@@ -44,10 +45,23 @@ export interface UserProfile {
   bio: string;
   skills: string[];
   yearsExperience: number;
+  education?: string;
+  experienceSummary?: string;
+  resumeName?: string;
   preferences: {
     remote: boolean;
     minSalary: number;
     locations: string[];
   };
   dislikedJobs?: { title: string; company: string }[];
+}
+
+export interface CareerArticle {
+  id: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  readTime: string;
+  imageUrl: string;
+  date: string;
 }

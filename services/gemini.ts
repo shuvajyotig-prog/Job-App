@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { Job, JobCategory, SearchFilters, UserProfile } from "../types";
 import { searchJobsLocal, getTrendingCategoriesLocal } from "./searchEngine";
 
@@ -31,6 +31,49 @@ export const searchJobsWithGemini = async (query: string, filters?: SearchFilter
 export const getDiscoveryFeed = async (userProfile?: UserProfile): Promise<JobCategory[]> => {
   // Use local aggregation for instant feed
   return getTrendingCategoriesLocal(userProfile);
+};
+
+export const parseResumeText = async (text: string): Promise<Partial<UserProfile>> => {
+  if (!apiKey) return {};
+
+  try {
+    const model = "gemini-3-flash-preview";
+    const response = await ai.models.generateContent({
+      model,
+      contents: `Extract the following details from this resume text into a JSON object:
+      - name (string)
+      - currentRole (string, infer if not explicit)
+      - bio (short professional summary, max 200 chars)
+      - skills (array of strings)
+      - yearsExperience (number, estimate based on work history)
+      - education (string, most recent degree/university)
+      - experienceSummary (string, a concise paragraph summarizing work history)
+      
+      Resume Text:
+      ${text.slice(0, 10000)} // Limit context window just in case
+      `,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+             name: { type: Type.STRING },
+             currentRole: { type: Type.STRING },
+             bio: { type: Type.STRING },
+             skills: { type: Type.ARRAY, items: { type: Type.STRING } },
+             yearsExperience: { type: Type.NUMBER },
+             education: { type: Type.STRING },
+             experienceSummary: { type: Type.STRING }
+          }
+        }
+      }
+    });
+    
+    return JSON.parse(response.text || '{}');
+  } catch (e) {
+    console.error("Failed to parse resume with Gemini", e);
+    return {};
+  }
 };
 
 export const generateJobDetails = async (job: Job): Promise<string> => {
