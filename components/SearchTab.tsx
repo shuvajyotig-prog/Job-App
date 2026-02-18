@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Briefcase, Loader2, X, SlidersHorizontal, ChevronDown } from 'lucide-react';
+import { Search, Filter, Briefcase, Loader2, X, SlidersHorizontal, ChevronDown, Plus, Sparkles, Heart, History, Trash2 } from 'lucide-react';
 import { Job, SearchFilters, UserProfile, VoiceSearchParams } from '../types';
 import { JobCard } from './JobCard';
 import { searchJobsWithGemini } from '../services/gemini';
@@ -12,6 +12,15 @@ interface SearchTabProps {
   onDislike?: (job: Job) => void;
 }
 
+interface SavedSearchItem {
+  id: string;
+  title: string;
+  query: string;
+  location: string;
+  filters: SearchFilters;
+  createdAt: string;
+}
+
 const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Freelance", "Internship"];
 const EXPERIENCE_LEVELS = ["Entry Level", "Mid Level", "Senior", "Lead / Manager", "Executive"];
 
@@ -22,19 +31,54 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     remote: false, 
     minSalary: 0,
     jobTypes: [],
-    experienceLevel: ''
+    experienceLevel: '',
+    prioritySkills: [],
+    preferredCompanies: []
   });
   
+  // Saved Searches State
+  const [savedSearches, setSavedSearches] = useState<SavedSearchItem[]>([]);
+  const [showSavedSearches, setShowSavedSearches] = useState(false);
+  const savedSearchRef = useRef<HTMLDivElement>(null);
+
   // Staging state for modal
   const [tempFilters, setTempFilters] = useState<SearchFilters>(filters);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  
+  // Input state for tags in modal
+  const [skillInput, setSkillInput] = useState('');
+  const [companyInput, setCompanyInput] = useState('');
 
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isSearchSaved, setIsSearchSaved] = useState(false);
 
   // Track if we just received voice params to avoid infinite loops or double searches if params dont change
   const prevParamsRef = useRef<VoiceSearchParams | null>(null);
+
+  // Load saved searches on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('tgf_saved_searches');
+      if (stored) {
+        setSavedSearches(JSON.parse(stored));
+      }
+    } catch (e) {
+      console.error("Failed to load saved searches", e);
+    }
+  }, []);
+
+  // Close saved search dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (savedSearchRef.current && !savedSearchRef.current.contains(event.target as Node)) {
+        setShowSavedSearches(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // Handle External Params (Voice Search)
   useEffect(() => {
@@ -76,6 +120,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     
     setLoading(true);
     setHasSearched(true);
+    setIsSearchSaved(false);
     
     const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
     const results = await searchJobsWithGemini(fullQuery, filters, userProfile);
@@ -87,6 +132,7 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     setFilters(tempFilters);
     setIsFilterOpen(false);
     setLoading(true);
+    setIsSearchSaved(false);
     const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
     searchJobsWithGemini(fullQuery, tempFilters, userProfile).then(results => {
       setJobs(results);
@@ -95,11 +141,75 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
   };
 
   const clearFilters = () => {
-    const cleared = { remote: false, minSalary: 0, jobTypes: [], experienceLevel: '' };
+    const cleared = { 
+        remote: false, 
+        minSalary: 0, 
+        jobTypes: [], 
+        experienceLevel: '',
+        prioritySkills: [],
+        preferredCompanies: []
+    };
     setTempFilters(cleared);
     setFilters(cleared);
     setIsFilterOpen(false);
-    handleSearch();
+    setIsSearchSaved(false);
+    
+    // Explicitly search with cleared filters to avoid state race condition
+    setLoading(true);
+    const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
+    searchJobsWithGemini(fullQuery, cleared, userProfile).then(results => {
+      setJobs(results);
+      setLoading(false);
+    });
+  };
+
+  const handleSaveSearch = () => {
+    const titleParts = [];
+    if (query) titleParts.push(query);
+    else if (filters.jobTypes.length > 0) titleParts.push(filters.jobTypes[0]);
+    else titleParts.push("Jobs");
+    
+    if (location) titleParts.push(`in ${location}`);
+    
+    const newSearch: SavedSearchItem = {
+        id: Date.now().toString(),
+        title: titleParts.join(' '),
+        query,
+        location,
+        filters,
+        createdAt: new Date().toLocaleDateString()
+    };
+
+    const updated = [newSearch, ...savedSearches].slice(0, 8); // Keep last 8
+    setSavedSearches(updated);
+    localStorage.setItem('tgf_saved_searches', JSON.stringify(updated));
+
+    setIsSearchSaved(true);
+    setTimeout(() => setIsSearchSaved(false), 2000);
+  };
+
+  const handleDeleteSearch = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const updated = savedSearches.filter(s => s.id !== id);
+    setSavedSearches(updated);
+    localStorage.setItem('tgf_saved_searches', JSON.stringify(updated));
+  };
+
+  const applySavedSearch = (search: SavedSearchItem) => {
+    setQuery(search.query);
+    setLocation(search.location);
+    setFilters(search.filters);
+    setTempFilters(search.filters);
+    setShowSavedSearches(false);
+
+    // Trigger Search
+    setLoading(true);
+    const fullQuery = search.location ? `${search.query} jobs in ${search.location}` : search.query || (userProfile?.currentRole || "Frontend Developer");
+    searchJobsWithGemini(fullQuery, search.filters, userProfile).then(results => {
+      setJobs(results);
+      setLoading(false);
+      setHasSearched(true);
+    });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -121,14 +231,56 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
       newFilters.minSalary = 0;
     } else if (key === 'experienceLevel') {
       newFilters.experienceLevel = '';
+    } else if (key === 'prioritySkills' && value) {
+        newFilters.prioritySkills = newFilters.prioritySkills?.filter(s => s !== value);
+    } else if (key === 'preferredCompanies' && value) {
+        newFilters.preferredCompanies = newFilters.preferredCompanies?.filter(c => c !== value);
     }
     setFilters(newFilters);
     setLoading(true);
+    setIsSearchSaved(false);
     const fullQuery = location ? `${query} jobs in ${location}` : query || (userProfile?.currentRole || "Frontend Developer");
     searchJobsWithGemini(fullQuery, newFilters, userProfile).then(results => {
       setJobs(results);
       setLoading(false);
     });
+  };
+
+  const handleAddTag = (type: 'skill' | 'company') => {
+      if (type === 'skill' && skillInput.trim()) {
+          setTempFilters(prev => ({
+              ...prev,
+              prioritySkills: [...(prev.prioritySkills || []), skillInput.trim()]
+          }));
+          setSkillInput('');
+      } else if (type === 'company' && companyInput.trim()) {
+          setTempFilters(prev => ({
+              ...prev,
+              preferredCompanies: [...(prev.preferredCompanies || []), companyInput.trim()]
+          }));
+          setCompanyInput('');
+      }
+  };
+
+  const handleRemoveTag = (type: 'skill' | 'company', value: string) => {
+      if (type === 'skill') {
+          setTempFilters(prev => ({
+              ...prev,
+              prioritySkills: prev.prioritySkills?.filter(s => s !== value)
+          }));
+      } else {
+          setTempFilters(prev => ({
+              ...prev,
+              preferredCompanies: prev.preferredCompanies?.filter(c => c !== value)
+          }));
+      }
+  };
+
+  const handleTagInputKeyDown = (e: React.KeyboardEvent, type: 'skill' | 'company') => {
+      if (e.key === 'Enter') {
+          e.preventDefault();
+          handleAddTag(type);
+      }
   };
 
   const handleDislikeLocal = (jobToDislike: Job) => {
@@ -142,94 +294,185 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
     (filters.remote ? 1 : 0) + 
     (filters.minSalary > 0 ? 1 : 0) + 
     filters.jobTypes.length + 
-    (filters.experienceLevel ? 1 : 0);
+    (filters.experienceLevel ? 1 : 0) +
+    (filters.prioritySkills?.length || 0) +
+    (filters.preferredCompanies?.length || 0);
 
   return (
-    <div className="max-w-5xl mx-auto pb-20 relative">
+    <div className="max-w-5xl mx-auto pb-24 relative">
       
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-8 sticky top-4 z-20">
-        <h1 className="text-2xl font-bold text-slate-900 mb-6 hidden md:block">
-           {userProfile?.name ? `Jobs for ${userProfile.name.split(' ')[0]}` : 'Find your next dream job'}
-        </h1>
+      {/* Search Header Block */}
+      <div className="bg-white rounded-[2rem] shadow-neo border-2 border-neo-black p-6 mb-10 sticky top-4 z-20">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+             <div>
+                <h1 className="text-3xl font-display font-black text-neo-black tracking-tight">
+                {userProfile?.name ? `Hey ${userProfile.name.split(' ')[0]}!` : 'Find Your Gig'}
+                </h1>
+                <p className="text-slate-500 font-medium mt-1">Ready for your next big move?</p>
+             </div>
+             <div className="hidden md:block">
+                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-acid rounded-full border-2 border-neo-black shadow-sm font-bold text-xs">
+                    <Sparkles size={12} fill="black" /> AI Powered
+                 </div>
+             </div>
+        </div>
         
-        <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative group">
-             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search className="h-6 w-6 text-neo-black" strokeWidth={3} />
              </div>
              <input
                 type="text"
-                className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
-                placeholder={userProfile?.currentRole ? `Try "${userProfile.currentRole}"...` : "Job title, keywords, or company"}
+                className="block w-full pl-12 pr-4 py-4 border-2 border-neo-black rounded-xl text-lg font-medium bg-white placeholder-slate-400 focus:outline-none focus:shadow-neo-sm focus:bg-purple-50 transition-all"
+                placeholder={userProfile?.currentRole ? `Try "${userProfile.currentRole}"...` : "Job title, keywords..."}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
              />
           </div>
 
-          <LocationAutocomplete 
-            value={location}
-            onChange={setLocation}
-            onKeyDown={handleKeyDown}
-          />
+          <div className="md:w-1/3">
+             <LocationAutocomplete 
+                value={location}
+                onChange={setLocation}
+                onKeyDown={handleKeyDown}
+             />
+          </div>
 
           <button 
              onClick={() => handleSearch()}
              disabled={loading}
-             className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded-xl transition-colors shadow-lg shadow-indigo-200 flex items-center justify-center min-w-[120px]"
+             className="bg-electric hover:bg-violet-700 text-white font-bold py-4 px-8 rounded-xl border-2 border-neo-black shadow-neo active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center min-w-[120px]"
           >
-             {loading ? <Loader2 className="animate-spin h-5 w-5" /> : 'Search'}
+             {loading ? <Loader2 className="animate-spin h-6 w-6" /> : 'Search'}
           </button>
         </div>
         
-        <div className="flex flex-wrap items-center gap-2 mt-4">
+        {/* Filter Bar */}
+        <div className="flex flex-wrap items-center gap-3 mt-6 relative">
            <button 
              onClick={openFilters}
-             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-lg transition-all ${
+             className={`flex items-center gap-2 px-5 py-2.5 text-sm font-bold border-2 rounded-xl transition-all ${
                activeFilterCount > 0 
-                 ? 'bg-indigo-50 text-indigo-700 border-indigo-200 hover:bg-indigo-100' 
-                 : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                 ? 'bg-neo-black text-white border-neo-black' 
+                 : 'bg-white text-neo-black border-neo-black hover:bg-slate-50'
              }`}
            >
-             <SlidersHorizontal size={14} />
+             <SlidersHorizontal size={16} />
              Filters
              {activeFilterCount > 0 && (
-               <span className="ml-1 bg-indigo-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+               <span className="ml-1 bg-acid text-neo-black text-[10px] font-black px-1.5 py-0.5 rounded-full border border-neo-black">
                  {activeFilterCount}
                </span>
              )}
            </button>
 
-           <div className="h-6 w-px bg-slate-200 mx-2 hidden md:block"></div>
+           <div className="relative" ref={savedSearchRef}>
+             <button 
+                onClick={() => setShowSavedSearches(!showSavedSearches)}
+                className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-2 rounded-xl transition-all ${
+                  showSavedSearches
+                   ? 'bg-slate-100 text-neo-black border-neo-black'
+                   : 'bg-white text-neo-black border-neo-black hover:bg-slate-50'
+                }`}
+             >
+                <History size={16} />
+                Saved
+             </button>
 
+             {/* Saved Searches Dropdown */}
+             {showSavedSearches && (
+                <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl border-2 border-neo-black shadow-neo z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-slate-50 px-4 py-2 border-b-2 border-neo-black text-xs font-black uppercase text-slate-500 tracking-wider">
+                       Your Stashed Searches
+                    </div>
+                    {savedSearches.length === 0 ? (
+                        <div className="p-6 text-center text-slate-500 text-sm font-medium">
+                           No saved searches yet.
+                        </div>
+                    ) : (
+                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                           {savedSearches.map(search => (
+                               <div key={search.id} onClick={() => applySavedSearch(search)} className="px-4 py-3 hover:bg-purple-50 cursor-pointer border-b border-slate-100 last:border-0 group">
+                                   <div className="flex justify-between items-start">
+                                      <div className="flex-1 min-w-0 pr-2">
+                                         <p className="font-bold text-neo-black truncate">{search.title}</p>
+                                         <p className="text-xs text-slate-500 mt-0.5">{search.createdAt}</p>
+                                      </div>
+                                      <button 
+                                        onClick={(e) => handleDeleteSearch(e, search.id)}
+                                        className="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-red-50 transition-colors"
+                                      >
+                                         <Trash2 size={14} />
+                                      </button>
+                                   </div>
+                               </div>
+                           ))}
+                        </div>
+                    )}
+                </div>
+             )}
+           </div>
+
+           <div className="h-8 w-0.5 bg-slate-200 mx-1 hidden md:block"></div>
+
+           {/* Active Filter Chips - Neo Brutalist Style */}
            {filters.remote && (
-             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100">
-               Remote
-               <button onClick={() => removeFilter('remote')} className="hover:bg-indigo-200 rounded-full p-0.5"><X size={12} /></button>
+             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-neo-black border-2 border-neo-black shadow-[2px_2px_0px_black]">
+               REMOTE
+               <button onClick={() => removeFilter('remote')} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
              </span>
            )}
            {filters.minSalary > 0 && (
-             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100">
+             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-100 text-green-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
                ₹{filters.minSalary / 100000}L+
-               <button onClick={() => removeFilter('minSalary')} className="hover:bg-green-200 rounded-full p-0.5"><X size={12} /></button>
+               <button onClick={() => removeFilter('minSalary')} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
              </span>
            )}
            {filters.experienceLevel && (
-             <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100">
-               {filters.experienceLevel}
-               <button onClick={() => removeFilter('experienceLevel')} className="hover:bg-purple-200 rounded-full p-0.5"><X size={12} /></button>
+             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-100 text-purple-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+               {filters.experienceLevel.toUpperCase()}
+               <button onClick={() => removeFilter('experienceLevel')} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
              </span>
            )}
            {filters.jobTypes.map(type => (
-             <span key={type} className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-               {type}
-               <button onClick={() => removeFilter('jobTypes', type)} className="hover:bg-blue-200 rounded-full p-0.5"><X size={12} /></button>
+             <span key={type} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-100 text-blue-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+               {type.toUpperCase()}
+               <button onClick={() => removeFilter('jobTypes', type)} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
              </span>
            ))}
+           {filters.prioritySkills?.map(skill => (
+               <span key={skill} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-100 text-orange-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+                   {skill.toUpperCase()}
+                   <button onClick={() => removeFilter('prioritySkills', skill)} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
+               </span>
+           ))}
+           {filters.preferredCompanies?.map(comp => (
+               <span key={comp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-100 text-teal-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+                   {comp.toUpperCase()}
+                   <button onClick={() => removeFilter('preferredCompanies', comp)} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
+               </span>
+           ))}
+
+            {/* Save Search Button */}
+            {(query || location || activeFilterCount > 0) && (
+             <button 
+               onClick={handleSaveSearch}
+               className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all shadow-[2px_2px_0px_black] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none ${
+                 isSearchSaved 
+                 ? 'bg-hot-pink text-white border-neo-black' 
+                 : 'bg-white text-neo-black border-neo-black hover:bg-pink-50'
+               }`}
+             >
+               <Heart size={14} className={isSearchSaved ? "fill-current" : ""} />
+               {isSearchSaved ? 'Saved!' : 'Save Search'}
+             </button>
+           )}
            
            {activeFilterCount > 0 && (
-             <button onClick={clearFilters} className="text-xs text-slate-500 hover:text-red-500 ml-auto md:ml-2 font-medium">
-               Clear all
+             <button onClick={clearFilters} className={`text-xs font-bold text-neo-black underline decoration-2 decoration-red-500 hover:text-red-600 ${!(query || location || activeFilterCount > 0) ? 'ml-auto' : ''}`}>
+               Clear All
              </button>
            )}
         </div>
@@ -237,38 +480,38 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
 
       <div className="space-y-4">
          <div className="flex justify-between items-end mb-2 px-2">
-            <h2 className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
+            <h2 className="text-base font-black text-neo-black uppercase tracking-wider bg-acid inline-block px-2 transform -rotate-1">
                {loading ? 'Searching...' : `${jobs.length} Results Found`}
             </h2>
          </div>
 
          {loading ? (
-           <div className="grid gap-4">
+           <div className="grid gap-6">
               {[1, 2, 3].map(i => (
-                <div key={i} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm animate-pulse">
+                <div key={i} className="bg-white p-6 rounded-2xl border-2 border-neo-black shadow-sm animate-pulse">
                    <div className="flex gap-4">
-                      <div className="w-12 h-12 bg-slate-100 rounded-lg"></div>
+                      <div className="w-14 h-14 bg-slate-200 rounded-xl border-2 border-slate-300"></div>
                       <div className="flex-1 space-y-3">
-                         <div className="h-4 bg-slate-100 rounded w-1/3"></div>
-                         <div className="h-3 bg-slate-100 rounded w-1/4"></div>
-                         <div className="h-3 bg-slate-100 rounded w-full"></div>
+                         <div className="h-5 bg-slate-200 rounded w-1/3"></div>
+                         <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                         <div className="h-4 bg-slate-200 rounded w-full"></div>
                       </div>
                    </div>
                 </div>
               ))}
            </div>
          ) : (
-           <div className="grid gap-4">
+           <div className="grid gap-6">
              {jobs.map(job => (
                <JobCard key={job.id} job={job} onClick={onJobClick} onDislike={handleDislikeLocal} />
              ))}
              {jobs.length === 0 && hasSearched && (
-               <div className="text-center py-20">
-                  <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                     <Briefcase className="text-slate-400" size={32} />
+               <div className="text-center py-24 bg-white rounded-[2rem] border-2 border-neo-black border-dashed">
+                  <div className="bg-acid w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-neo-black shadow-neo">
+                     <Briefcase className="text-neo-black" size={32} />
                   </div>
-                  <h3 className="text-lg font-medium text-slate-900">No jobs found</h3>
-                  <p className="text-slate-500">Try adjusting your search terms or filters.</p>
+                  <h3 className="text-2xl font-black text-neo-black font-display">No gigs found</h3>
+                  <p className="text-slate-600 font-medium">Try adjusting your filters or search for something else.</p>
                </div>
              )}
            </div>
@@ -277,23 +520,81 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
 
       {isFilterOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setIsFilterOpen(false)} />
+           <div className="absolute inset-0 bg-neo-black/60 backdrop-blur-sm" onClick={() => setIsFilterOpen(false)} />
            
-           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl relative z-10 flex flex-col max-h-[90vh]">
-              <div className="flex items-center justify-between p-5 border-b border-slate-100">
-                 <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                   <Filter size={20} className="text-indigo-600" /> Filter Jobs
+           <div className="bg-white rounded-[2rem] w-full max-w-lg shadow-2xl relative z-10 flex flex-col max-h-[90vh] border-2 border-neo-black animate-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between p-6 border-b-2 border-neo-black bg-purple-50 rounded-t-[2rem]">
+                 <h2 className="text-2xl font-black text-neo-black flex items-center gap-2 font-display">
+                   <Filter size={24} className="text-electric" /> FILTER GIGS
                  </h2>
-                 <button onClick={() => setIsFilterOpen(false)} className="text-slate-400 hover:text-slate-600 p-1 rounded-full hover:bg-slate-100">
-                    <X size={20} />
+                 <button onClick={() => setIsFilterOpen(false)} className="text-neo-black hover:bg-red-100 p-2 rounded-xl border-2 border-transparent hover:border-neo-black transition-all">
+                    <X size={24} strokeWidth={3} />
                  </button>
               </div>
 
               <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
                  
+                 {/* Priority Skills Input */}
                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Job Type</h3>
+                    <h3 className="text-sm font-black text-neo-black uppercase tracking-wider mb-3">Priority Skills</h3>
+                    <div className="flex gap-2 mb-2">
+                        <input 
+                            type="text" 
+                            className="flex-1 border-2 border-neo-black rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:shadow-neo-sm"
+                            placeholder="e.g. React, Python"
+                            value={skillInput}
+                            onChange={(e) => setSkillInput(e.target.value)}
+                            onKeyDown={(e) => handleTagInputKeyDown(e, 'skill')}
+                        />
+                        <button 
+                            onClick={() => handleAddTag('skill')}
+                            className="bg-neo-black text-white p-2.5 rounded-xl border-2 border-neo-black hover:bg-gray-800"
+                        >
+                            <Plus size={20} />
+                        </button>
+                    </div>
                     <div className="flex flex-wrap gap-2">
+                        {tempFilters.prioritySkills?.map(skill => (
+                            <span key={skill} className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-orange-100 text-neo-black border-2 border-neo-black">
+                                {skill}
+                                <button onClick={() => handleRemoveTag('skill', skill)} className="hover:text-red-600"><X size={14} /></button>
+                            </span>
+                        ))}
+                    </div>
+                 </div>
+
+                 {/* Preferred Companies Input */}
+                 <div>
+                    <h3 className="text-sm font-black text-neo-black uppercase tracking-wider mb-3">Target Companies</h3>
+                    <div className="flex gap-2 mb-2">
+                        <input 
+                            type="text" 
+                            className="flex-1 border-2 border-neo-black rounded-xl px-4 py-2.5 text-sm font-medium focus:outline-none focus:shadow-neo-sm"
+                            placeholder="e.g. Google, Microsoft"
+                            value={companyInput}
+                            onChange={(e) => setCompanyInput(e.target.value)}
+                            onKeyDown={(e) => handleTagInputKeyDown(e, 'company')}
+                        />
+                        <button 
+                            onClick={() => handleAddTag('company')}
+                            className="bg-neo-black text-white p-2.5 rounded-xl border-2 border-neo-black hover:bg-gray-800"
+                        >
+                            <Plus size={20} />
+                        </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {tempFilters.preferredCompanies?.map(comp => (
+                            <span key={comp} className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold bg-teal-100 text-neo-black border-2 border-neo-black">
+                                {comp}
+                                <button onClick={() => handleRemoveTag('company', comp)} className="hover:text-red-600"><X size={14} /></button>
+                            </span>
+                        ))}
+                    </div>
+                 </div>
+                 
+                 <div>
+                    <h3 className="text-sm font-black text-neo-black uppercase tracking-wider mb-3">Job Type</h3>
+                    <div className="flex flex-wrap gap-3">
                        {JOB_TYPES.map(type => {
                           const isSelected = tempFilters.jobTypes.includes(type);
                           return (
@@ -307,10 +608,10 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
                                      : [...prev.jobTypes, type]
                                  }));
                                }}
-                               className={`px-4 py-2 rounded-lg text-sm font-medium border transition-all ${
+                               className={`px-4 py-2 rounded-lg text-sm font-bold border-2 transition-all shadow-sm ${
                                  isSelected 
-                                 ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-200' 
-                                 : 'bg-white text-slate-600 border-slate-200 hover:border-indigo-300'
+                                 ? 'bg-electric text-white border-neo-black shadow-[2px_2px_0px_black]' 
+                                 : 'bg-white text-slate-600 border-slate-200 hover:border-neo-black'
                                }`}
                             >
                                {type}
@@ -321,18 +622,18 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
                  </div>
 
                  <div>
-                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider mb-3">Experience Level</h3>
-                    <div className="space-y-2">
+                    <h3 className="text-sm font-black text-neo-black uppercase tracking-wider mb-3">Experience Level</h3>
+                    <div className="space-y-3">
                        {EXPERIENCE_LEVELS.map(level => (
-                          <label key={level} className="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 cursor-pointer transition-colors">
+                          <label key={level} className="flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 hover:border-neo-black hover:bg-slate-50 cursor-pointer transition-all">
                              <input 
                                type="radio" 
                                name="experience" 
                                checked={tempFilters.experienceLevel === level}
                                onChange={() => setTempFilters(prev => ({ ...prev, experienceLevel: level }))}
-                               className="w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                               className="w-5 h-5 text-electric border-2 border-neo-black focus:ring-offset-0 focus:ring-0"
                              />
-                             <span className="text-slate-700 font-medium">{level}</span>
+                             <span className="text-neo-black font-bold">{level}</span>
                           </label>
                        ))}
                     </div>
@@ -340,8 +641,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
 
                  <div>
                     <div className="flex justify-between items-center mb-4">
-                       <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">Minimum Salary (Annual)</h3>
-                       <span className="text-sm font-semibold text-indigo-600">
+                       <h3 className="text-sm font-black text-neo-black uppercase tracking-wider">Minimum Salary (Annual)</h3>
+                       <span className="text-sm font-black bg-green-100 text-green-900 px-2 py-1 rounded border-2 border-neo-black">
                           {tempFilters.minSalary > 0 ? `₹${tempFilters.minSalary/100000}L+` : 'Any'}
                        </span>
                     </div>
@@ -352,39 +653,39 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
                       step="100000" 
                       value={tempFilters.minSalary}
                       onChange={(e) => setTempFilters(prev => ({ ...prev, minSalary: Number(e.target.value) }))}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      className="w-full h-3 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-electric border-2 border-neo-black"
                     />
-                    <div className="flex justify-between text-xs text-slate-400 mt-2">
+                    <div className="flex justify-between text-xs font-bold text-slate-400 mt-2">
                        <span>₹0</span>
                        <span>₹20L</span>
                        <span>₹50L+</span>
                     </div>
                  </div>
 
-                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                 <div className="flex items-center justify-between p-4 bg-acid/20 rounded-xl border-2 border-neo-black">
                     <div>
-                       <h3 className="font-semibold text-slate-900">Remote Only</h3>
-                       <p className="text-xs text-slate-500">Show only fully remote positions</p>
+                       <h3 className="font-bold text-neo-black">Remote Only</h3>
+                       <p className="text-xs text-slate-600 font-medium">Show only fully remote positions</p>
                     </div>
                     <button 
                        onClick={() => setTempFilters(prev => ({ ...prev, remote: !prev.remote }))}
-                       className={`w-12 h-6 rounded-full transition-colors relative ${tempFilters.remote ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                       className={`w-14 h-8 rounded-full border-2 border-neo-black transition-colors relative ${tempFilters.remote ? 'bg-electric' : 'bg-white'}`}
                     >
-                       <div className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${tempFilters.remote ? 'left-7' : 'left-1'}`}></div>
+                       <div className={`w-5 h-5 bg-white border-2 border-neo-black rounded-full absolute top-1 transition-transform ${tempFilters.remote ? 'left-7' : 'left-1'}`}></div>
                     </button>
                  </div>
 
               </div>
 
-              <div className="p-5 border-t border-slate-100 bg-slate-50 rounded-b-2xl flex justify-between items-center">
-                 <button onClick={clearFilters} className="text-slate-500 hover:text-slate-800 font-medium text-sm px-2">
-                    Reset all
+              <div className="p-6 border-t-2 border-neo-black bg-white rounded-b-[2rem] flex justify-between items-center">
+                 <button onClick={clearFilters} className="text-slate-500 hover:text-neo-black font-bold text-sm px-2 underline decoration-2 hover:decoration-red-500">
+                    Clear Filters
                  </button>
                  <button 
                     onClick={handleApplyFilters}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg shadow-indigo-200 transition-transform active:scale-95"
+                    className="bg-neo-black hover:bg-gray-800 text-white font-black py-3 px-8 rounded-xl border-2 border-transparent shadow-neo active:shadow-none active:translate-x-[2px] active:translate-y-[2px] transition-all"
                  >
-                    Show Results
+                    SHOW RESULTS
                  </button>
               </div>
            </div>

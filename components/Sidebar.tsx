@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Search, Compass, Bookmark, Settings, LogOut, UserCircle, Briefcase } from 'lucide-react';
+import { Search, Compass, Bookmark, Settings, LogOut, UserCircle, Briefcase, Zap } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -20,69 +20,73 @@ interface NavItem {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, savedCount, userName, userAvatar, userRole }) => {
   const navItems: NavItem[] = [
-    { id: 'search', label: 'Search Jobs', icon: Search },
-    { id: 'discovery', label: 'Discover', icon: Compass },
-    { id: 'saved', label: 'Saved', icon: Bookmark, badge: savedCount },
-    { id: 'profile', label: 'My Profile', icon: UserCircle },
+    { id: 'search', label: 'Gig Search', icon: Search },
+    { id: 'discovery', label: 'Explore', icon: Compass },
+    { id: 'saved', label: 'Stashed', icon: Bookmark, badge: savedCount },
+    { id: 'profile', label: 'My Vibe', icon: UserCircle },
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 h-screen sticky top-0">
-      <div className="p-6 border-b border-slate-100">
-        <div className="flex items-center gap-2 text-indigo-600 font-bold text-xl tracking-tight">
-           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white">
-              <Briefcase size={18} strokeWidth={3} />
-           </div>
-           TheGigFinder
+    <aside className="hidden md:flex flex-col w-72 h-screen sticky top-0 p-6">
+      {/* Floating Card Container */}
+      <div className="flex flex-col h-full bg-white border-2 border-neo-black rounded-[2rem] shadow-neo overflow-hidden">
+        
+        <div className="p-6 border-b-2 border-neo-black bg-acid/20">
+          <div className="flex items-center gap-2 text-neo-black font-display font-bold text-2xl tracking-tighter">
+             <div className="w-10 h-10 bg-neo-black text-acid rounded-xl flex items-center justify-center border-2 border-transparent shadow-sm transform -rotate-3">
+                <Zap size={24} fill="currentColor" />
+             </div>
+             GigFinder
+          </div>
         </div>
-      </div>
 
-      <nav className="flex-1 p-4 space-y-2">
-         {navItems.map(item => {
-           const isActive = currentView === item.id;
-           const Icon = item.icon;
-           return (
-             <button
-               key={item.id}
-               onClick={() => onChangeView(item.id)}
-               className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
-                 isActive 
-                  ? 'bg-indigo-50 text-indigo-700 font-semibold shadow-sm' 
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-               }`}
-             >
-               <div className="flex items-center gap-3">
-                 <Icon size={20} className={isActive ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'} />
-                 <span>{item.label}</span>
-               </div>
-               {item.badge !== undefined && item.badge > 0 && (
-                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isActive ? 'bg-indigo-200 text-indigo-800' : 'bg-slate-200 text-slate-600'}`}>
-                    {item.badge}
-                 </span>
-               )}
-             </button>
-           );
-         })}
-      </nav>
+        <nav className="flex-1 p-4 space-y-3">
+           {navItems.map(item => {
+             const isActive = currentView === item.id;
+             const Icon = item.icon;
+             return (
+               <button
+                 key={item.id}
+                 onClick={() => onChangeView(item.id)}
+                 className={`w-full flex items-center justify-between px-4 py-4 rounded-xl transition-all duration-200 group border-2 ${
+                   isActive 
+                    ? 'bg-neo-black text-white border-neo-black shadow-[4px_4px_0px_0px_#ccff00] translate-x-[-2px] translate-y-[-2px]' 
+                    : 'bg-white text-slate-600 border-transparent hover:border-neo-black hover:bg-slate-50'
+                 }`}
+               >
+                 <div className="flex items-center gap-3">
+                   <Icon size={20} className={isActive ? 'text-acid' : 'text-slate-400 group-hover:text-neo-black'} strokeWidth={2.5} />
+                   <span className={`font-display font-bold ${isActive ? 'text-lg' : 'text-base'}`}>{item.label}</span>
+                 </div>
+                 {item.badge !== undefined && item.badge > 0 && (
+                   <span className={`text-xs font-black px-2 py-1 rounded-full border border-neo-black ${isActive ? 'bg-acid text-neo-black' : 'bg-slate-200 text-neo-black'}`}>
+                      {item.badge}
+                   </span>
+                 )}
+               </button>
+             );
+           })}
+        </nav>
 
-      <div className="p-4 border-t border-slate-100">
-         <div 
-           onClick={() => onChangeView('profile')}
-           className={`flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors ${currentView === 'profile' ? 'bg-slate-50' : ''}`}
-         >
-            <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm flex items-center justify-center text-slate-500 font-bold text-sm overflow-hidden shrink-0">
-               {userAvatar ? (
-                 <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
-               ) : (
-                 userName ? userName.charAt(0) : 'U'
-               )}
-            </div>
-            <div className="flex-1 min-w-0">
-               <p className="text-sm font-semibold text-slate-900 truncate">{userName || 'User Profile'}</p>
-               <p className="text-xs text-slate-500 truncate">{userRole || 'Job Seeker'}</p>
-            </div>
-            <Settings size={16} className="text-slate-400" />
-         </div>
+        <div className="p-4 border-t-2 border-neo-black bg-slate-50">
+           <div 
+             onClick={() => onChangeView('profile')}
+             className={`flex items-center gap-3 p-3 rounded-xl border-2 border-transparent hover:border-neo-black hover:bg-white cursor-pointer transition-all ${currentView === 'profile' ? 'bg-white border-neo-black' : ''}`}
+           >
+              <div className="w-10 h-10 rounded-full bg-acid border-2 border-neo-black shadow-sm flex items-center justify-center text-neo-black font-bold text-sm overflow-hidden shrink-0">
+                 {userAvatar ? (
+                   <img src={userAvatar} alt={userName} className="w-full h-full object-cover" />
+                 ) : (
+                   userName ? userName.charAt(0) : 'U'
+                 )}
+              </div>
+              <div className="flex-1 min-w-0">
+                 <p className="text-sm font-bold font-display text-neo-black truncate">{userName || 'User Profile'}</p>
+                 <p className="text-xs text-slate-500 font-medium truncate">{userRole || 'Job Seeker'}</p>
+              </div>
+              <Settings size={18} className="text-neo-black" />
+           </div>
+        </div>
       </div>
     </aside>
   );

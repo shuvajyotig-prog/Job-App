@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TheGigFinder</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
           extend: {
             fontFamily: {
               sans: ['Inter', 'sans-serif'],
+              display: ['Space Grotesk', 'sans-serif'],
             },
             colors: {
               primary: {
@@ -20,16 +21,32 @@
                 500: '#0ea5e9',
                 600: '#0284c7',
                 700: '#0369a1',
-              }
+              },
+              'neo-black': '#1a1a1a',
+              'neo-white': '#ffffff',
+              'acid': '#ccff00',
+              'electric': '#6d28d9',
+              'hot-pink': '#ff00ff',
+            },
+            boxShadow: {
+              'neo': '4px 4px 0px 0px #1a1a1a',
+              'neo-sm': '2px 2px 0px 0px #1a1a1a',
+              'neo-lg': '6px 6px 0px 0px #1a1a1a',
+              'neo-hover': '6px 6px 0px 0px #1a1a1a',
             },
             keyframes: {
               slideInRight: {
                 '0%': { transform: 'translateX(100%)' },
                 '100%': { transform: 'translateX(0)' },
+              },
+              float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-5px)' },
               }
             },
             animation: {
               slideInRight: 'slideInRight 0.3s ease-out forwards',
+              float: 'float 3s ease-in-out infinite',
             }
           }
         }
@@ -44,11 +61,16 @@
         background: #f1f1f1; 
       }
       ::-webkit-scrollbar-thumb {
-        background: #cbd5e1; 
+        background: #1a1a1a; 
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8; 
+        background: #4a4a4a; 
+      }
+      
+      .pattern-grid {
+        background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+        background-size: 24px 24px;
       }
     </style>
   <script type="importmap">
@@ -63,7 +85,7 @@
 }
 </script>
 </head>
-  <body class="bg-slate-50 text-slate-900 antialiased">
+  <body class="bg-[#fcfcfc] text-neo-black antialiased pattern-grid">
     <div id="root"></div>
   </body>
 </html>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Job } from '../types';
-import { X, Share2, Bookmark, Check, Send, Sparkles, ChevronDown } from 'lucide-react';
+import { X, Share2, Bookmark, Check, Send, Sparkles, ChevronDown, ExternalLink } from 'lucide-react';
 import { Badge } from './ui/Badge';
 import { generateJobDetails } from '../services/gemini';
 
@@ -53,6 +53,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, on
   }, [job]);
 
   const handleApply = () => {
+    if (job?.applyUrl) {
+        window.open(job.applyUrl, '_blank');
+    }
     setApplied(true);
     setStatus("Applied");
   };
@@ -184,11 +187,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, on
                 onClick={handleApply}
                 className="w-full py-3.5 px-4 rounded-xl flex items-center justify-center font-semibold text-lg transition-all transform active:scale-95 bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200"
               >
-                 <Send size={20} className="mr-2" />
-                 Apply Now
+                 {job.applyUrl ? (
+                    <ExternalLink size={20} className="mr-2" />
+                 ) : (
+                    <Send size={20} className="mr-2" />
+                 )}
+                 {job.applyUrl ? 'Apply on Company Site' : 'Apply Now'}
               </button>
               <p className="text-center text-xs text-slate-400 mt-3">
-                 Avg. response time: 2 days
+                 {job.applyUrl ? 'Redirects to external job board' : 'Avg. response time: 2 days'}
               </p>
             </>
           )}

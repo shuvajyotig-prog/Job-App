@@ -11,6 +11,7 @@ export interface Job {
   tags: string[];
   logoUrl?: string; // Placeholder
   matchScore?: number; // AI calculated fit
+  applyUrl?: string; // Real link to the job
 }
 
 export interface JobCategory {
@@ -26,6 +27,8 @@ export interface SearchFilters {
   minSalary: number;
   jobTypes: string[];
   experienceLevel: string;
+  prioritySkills?: string[];
+  preferredCompanies?: string[];
 }
 
 export interface VoiceSearchParams {

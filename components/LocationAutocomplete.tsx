@@ -80,17 +80,17 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({ valu
 
   return (
     <div className="flex-1 relative group md:max-w-xs" ref={wrapperRef}>
-       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+       <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
           {isLoading ? (
-             <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+             <Loader2 className="h-6 w-6 text-electric animate-spin" />
           ) : (
-             <MapPin className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+             <MapPin className="h-6 w-6 text-neo-black" strokeWidth={3} />
           )}
        </div>
        <input
           type="text"
-          className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all"
-          placeholder="City, state, or 'Remote'"
+          className="block w-full pl-12 pr-4 py-4 border-2 border-neo-black rounded-xl text-lg font-medium bg-white placeholder-slate-400 focus:outline-none focus:shadow-neo-sm focus:bg-purple-50 transition-all"
+          placeholder="City, State..."
           value={value}
           onChange={handleInputChange}
           onKeyDown={onKeyDown}
@@ -98,27 +98,27 @@ export const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({ valu
        />
        
        {isOpen && suggestions.length > 0 && (
-          <div className="absolute z-50 w-full mt-2 bg-white border border-slate-100 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+          <div className="absolute z-50 w-full mt-2 bg-white border-2 border-neo-black rounded-xl shadow-neo overflow-hidden animate-in fade-in zoom-in-95 duration-200">
              <div className="max-h-60 overflow-y-auto custom-scrollbar">
                {suggestions.map((city) => (
                   <button
                      key={city.id}
                      onClick={() => handleSelect(city)}
-                     className="w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center gap-3 text-sm text-slate-700 transition-colors border-b border-slate-50 last:border-0 group/item"
+                     className="w-full text-left px-4 py-3 hover:bg-purple-50 flex items-center gap-3 text-sm text-neo-black transition-colors border-b-2 border-slate-100 last:border-0 group/item"
                   >
-                     <div className="p-1.5 bg-slate-100 rounded-full group-hover/item:bg-blue-100 transition-colors">
-                        <MapPin size={12} className="text-slate-400 group-hover/item:text-blue-500" />
+                     <div className="p-1.5 bg-slate-100 rounded-full border border-slate-300 group-hover/item:bg-white group-hover/item:border-neo-black transition-colors">
+                        <MapPin size={14} className="text-slate-400 group-hover/item:text-neo-black" />
                      </div>
                      <span className="flex-1">
-                        <span className="font-semibold text-slate-900">{city.name}</span>
-                        <span className="text-slate-500 ml-1">
+                        <span className="font-bold text-neo-black">{city.name}</span>
+                        <span className="text-slate-500 ml-1 font-medium">
                           {city.admin1 ? `, ${city.admin1}` : ''}, {city.country}
                         </span>
                      </span>
                   </button>
                ))}
              </div>
-             <div className="bg-slate-50 px-3 py-1.5 border-t border-slate-100 text-[10px] text-slate-400 text-center">
+             <div className="bg-slate-50 px-3 py-1.5 border-t-2 border-neo-black text-[10px] text-slate-500 font-bold text-center uppercase tracking-wide">
                 Suggestions by Open-Meteo
              </div>
           </div>

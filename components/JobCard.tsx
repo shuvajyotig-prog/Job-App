@@ -1,7 +1,7 @@
 import React from 'react';
 import { Job } from '../types';
 import { Badge } from './ui/Badge';
-import { MapPin, IndianRupee, Clock, Building2, Sparkles, ThumbsDown } from 'lucide-react';
+import { MapPin, IndianRupee, Clock, Building2, Sparkles, ThumbsDown, ArrowUpRight } from 'lucide-react';
 
 interface JobCardProps {
   job: Job;
@@ -20,78 +20,81 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick, onDislike, featu
     <div 
       onClick={() => onClick(job)}
       className={`
-        group relative bg-white rounded-xl p-5 cursor-pointer 
-        border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-300
+        group relative bg-white rounded-2xl p-6 cursor-pointer 
+        border-2 border-neo-black 
         transition-all duration-200 ease-in-out
-        ${featured ? 'bg-gradient-to-br from-white to-indigo-50/50 border-indigo-100' : ''}
+        hover:shadow-neo hover:-translate-y-1 hover:-translate-x-1
+        ${featured ? 'bg-gradient-to-br from-white to-purple-50' : ''}
       `}
     >
       {/* Match Score Badge (AI Feature) */}
       {job.matchScore && (
-        <div className="absolute top-4 right-4 flex items-center gap-2">
-            {onDislike && (
-              <button 
-                onClick={handleDislike}
-                className="p-1.5 rounded-full text-slate-300 hover:bg-slate-100 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                title="Not Interested"
-              >
-                <ThumbsDown size={14} />
-              </button>
-            )}
-            <div className="flex items-center space-x-1 bg-green-50 text-green-700 text-xs font-bold px-2 py-1 rounded-lg border border-green-100">
-              <Sparkles size={12} />
-              <span>{job.matchScore}% Match</span>
-            </div>
+        <div className="absolute top-0 right-0 transform translate-x-2 -translate-y-2 z-10">
+           <div className="flex items-center gap-1 bg-acid text-neo-black text-xs font-black px-3 py-1.5 rounded-lg border-2 border-neo-black shadow-sm rotate-2 group-hover:rotate-0 transition-transform">
+              <Sparkles size={14} fill="black" />
+              <span>{job.matchScore}% MATCH</span>
+           </div>
         </div>
       )}
       
-      {/* Fallback dislike button position if matchScore is missing */}
-      {!job.matchScore && onDislike && (
+      {/* Dislike Action */}
+      {onDislike && (
          <button 
             onClick={handleDislike}
-            className="absolute top-4 right-4 p-1.5 rounded-full text-slate-300 hover:bg-slate-100 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-            title="Not Interested"
+            className="absolute top-4 right-4 z-0 p-2 rounded-lg text-slate-300 hover:text-red-500 hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100"
+            title="Not for me"
          >
-            <ThumbsDown size={16} />
+            <ThumbsDown size={18} strokeWidth={2.5} />
          </button>
       )}
 
-      <div className="flex items-start gap-4">
-        <div className="w-12 h-12 rounded-lg bg-slate-100 overflow-hidden flex-shrink-0 border border-slate-100">
-          <img src={job.logoUrl} alt={job.company} className="w-full h-full object-cover" />
+      <div className="flex items-start gap-5">
+        <div className="w-14 h-14 rounded-xl bg-white overflow-hidden flex-shrink-0 border-2 border-neo-black flex items-center justify-center shadow-sm">
+          {job.logoUrl ? (
+            <img src={job.logoUrl} alt={job.company} className="w-full h-full object-cover" />
+          ) : (
+            <Building2 className="text-neo-black" size={28} />
+          )}
         </div>
         
-        <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-slate-900 group-hover:text-indigo-600 transition-colors truncate pr-20">
-            {job.title}
-          </h3>
-          <div className="flex items-center text-slate-500 text-sm mt-1 mb-3">
-            <Building2 size={14} className="mr-1" />
-            <span className="font-medium mr-3">{job.company}</span>
-            <MapPin size={14} className="mr-1" />
-            <span className="truncate">{job.location}</span>
+        <div className="flex-1 min-w-0 pt-1">
+          <div className="flex justify-between items-start pr-8">
+             <h3 className="text-xl font-display font-bold text-neo-black group-hover:text-electric transition-colors truncate leading-tight">
+               {job.title}
+             </h3>
+          </div>
+          
+          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm font-medium text-slate-600 mt-1 mb-4">
+            <span className="flex items-center text-neo-black">
+               <Building2 size={16} className="mr-1.5" />
+               {job.company}
+            </span>
+            <span className="flex items-center">
+               <MapPin size={16} className="mr-1.5" />
+               {job.location}
+            </span>
           </div>
 
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="flex flex-wrap gap-2 mb-4">
              {job.tags.slice(0, 3).map(tag => (
                <Badge key={tag} variant="secondary">{tag}</Badge>
              ))}
           </div>
 
-          <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-50 pt-3 mt-1">
-             <div className="flex items-center gap-3">
-                <span className="flex items-center text-slate-700 font-medium">
-                  <IndianRupee size={14} className="mr-0.5 text-slate-400" />
+          <div className="flex items-center justify-between border-t-2 border-slate-100 pt-3 mt-2">
+             <div className="flex items-center gap-4 text-sm font-bold">
+                <span className="flex items-center bg-green-100 px-2 py-0.5 rounded-md border border-green-200 text-green-800">
+                  <IndianRupee size={14} className="mr-0.5" />
                   {job.salary}
                 </span>
-                <span className="flex items-center">
+                <span className="flex items-center text-slate-400 font-medium text-xs">
                   <Clock size={14} className="mr-1" />
                   {job.postedAt}
                 </span>
              </div>
-             <span className="text-indigo-600 font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                View Details &rarr;
-             </span>
+             <div className="w-8 h-8 rounded-full border-2 border-neo-black flex items-center justify-center bg-neo-black text-white group-hover:bg-acid group-hover:text-neo-black transition-colors">
+                <ArrowUpRight size={18} />
+             </div>
           </div>
         </div>
       </div>
