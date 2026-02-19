@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Compass, Bookmark, Settings, UserCircle, Zap, Newspaper } from 'lucide-react';
+import { Compass, Bookmark, Settings, UserCircle, Zap, Newspaper, Bot } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -22,6 +22,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, sav
   const navItems: NavItem[] = [
     { id: 'search', label: 'Search & Explore', icon: Compass },
     { id: 'feed', label: 'Career Feed', icon: Newspaper },
+    { id: 'coach', label: 'AI Coach', icon: Bot },
     { id: 'saved', label: 'Stashed', icon: Bookmark, badge: savedCount },
     { id: 'profile', label: 'My Vibe', icon: UserCircle },
   ];

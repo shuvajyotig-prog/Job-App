@@ -21,7 +21,15 @@ export interface JobCategory {
   jobs: Job[];
 }
 
-export type ViewState = 'search' | 'saved' | 'feed' | 'profile';
+export type ViewState = 'search' | 'saved' | 'feed' | 'profile' | 'coach';
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'model';
+  text: string;
+  timestamp: Date;
+  isAudio?: boolean;
+}
 
 export interface SearchFilters {
   remote: boolean;

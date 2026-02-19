@@ -382,10 +382,11 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
                   </button>
                   <button 
                      onClick={clearSearch}
-                     className="bg-white hover:bg-red-50 text-red-500 font-bold py-4 px-4 rounded-xl border-2 border-neo-black shadow-neo active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center"
+                     className="bg-white hover:bg-red-50 text-red-600 font-bold py-4 px-4 rounded-xl border-2 border-neo-black shadow-neo active:translate-x-[2px] active:translate-y-[2px] active:shadow-none transition-all flex items-center justify-center gap-2"
                      title="Clear Search"
                   >
-                     <RefreshCcw size={24} />
+                     <X size={20} strokeWidth={3} />
+                     <span className="hidden md:inline">Clear</span>
                   </button>
               </div>
           ) : (
@@ -476,14 +477,37 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
                <button onClick={() => removeFilter('remote')} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
              </span>
            )}
-           {/* ... Other filter chips logic (abbreviated for clarity, logic identical) ... */}
            {filters.minSalary > 0 && (
              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-green-100 text-green-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
                ₹{filters.minSalary / 100000}L+
                <button onClick={() => removeFilter('minSalary')} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
              </span>
            )}
-           
+           {filters.experienceLevel && (
+             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-purple-100 text-purple-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+               {filters.experienceLevel.toUpperCase()}
+               <button onClick={() => removeFilter('experienceLevel')} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
+             </span>
+           )}
+           {filters.jobTypes.map(type => (
+             <span key={type} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-blue-100 text-blue-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+               {type.toUpperCase()}
+               <button onClick={() => removeFilter('jobTypes', type)} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
+             </span>
+           ))}
+           {filters.prioritySkills?.map(skill => (
+               <span key={skill} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-orange-100 text-orange-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+                   {skill.toUpperCase()}
+                   <button onClick={() => removeFilter('prioritySkills', skill)} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
+               </span>
+           ))}
+           {filters.preferredCompanies?.map(comp => (
+               <span key={comp} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold bg-teal-100 text-teal-900 border-2 border-neo-black shadow-[2px_2px_0px_black]">
+                   {comp.toUpperCase()}
+                   <button onClick={() => removeFilter('preferredCompanies', comp)} className="hover:text-red-600"><X size={14} strokeWidth={3} /></button>
+               </span>
+           ))}
+
            {/* Save Search Button */}
            {(query || location || activeFilterCount > 0) && (
              <button 

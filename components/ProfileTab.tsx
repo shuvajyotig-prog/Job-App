@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { UserProfile } from '../types';
 import { User, Briefcase, Award, Save, Plus, X, MapPin, Sparkles, Upload, IndianRupee, FileText, GraduationCap, Loader2, PenTool } from 'lucide-react';
-import { parseResumeText } from '../services/gemini';
+import { parseResumeText, parseResumeFile } from '../services/gemini';
 
 interface ProfileTabProps {
   profile: UserProfile;
@@ -16,6 +16,7 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
   const [resumeText, setResumeText] = useState('');
   const [showResumeEditor, setShowResumeEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const resumeFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -57,7 +58,47 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
     }
   };
 
-  const handleResumeParse = async () => {
+  const handleResumeFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      
+      setIsParsing(true);
+      try {
+          const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                  if (typeof reader.result === 'string') {
+                      // data:application/pdf;base64,.....
+                      const parts = reader.result.split(',');
+                      resolve(parts[1]);
+                  } else {
+                      reject('Failed to read file');
+                  }
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+          });
+          
+          // Use file parser for PDF/Docs/Images
+          const parsedData = await parseResumeFile(base64, file.type);
+          
+          setFormData(prev => ({
+              ...prev,
+              ...parsedData,
+              resumeName: file.name
+          }));
+          
+          setShowResumeEditor(false);
+          setResumeText('');
+      } catch (e) {
+          console.error("File parsing error", e);
+      } finally {
+          setIsParsing(false);
+          setIsSaved(false);
+      }
+  };
+
+  const handleResumeTextParse = async () => {
       if (!resumeText.trim()) return;
       
       setIsParsing(true);
@@ -66,13 +107,8 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
           
           setFormData(prev => ({
               ...prev,
-              name: parsedData.name || prev.name,
-              currentRole: parsedData.currentRole || prev.currentRole,
-              bio: parsedData.bio || prev.bio,
-              education: parsedData.education || prev.education,
-              experienceSummary: parsedData.experienceSummary || prev.experienceSummary,
-              yearsExperience: parsedData.yearsExperience || prev.yearsExperience,
-              skills: parsedData.skills ? Array.from(new Set([...prev.skills, ...parsedData.skills])) : prev.skills
+              ...parsedData,
+              resumeName: 'Text Input'
           }));
           
           setShowResumeEditor(false);
@@ -143,25 +179,49 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
                  <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                     <FileText className="text-blue-500" size={20} /> AI Resume Parser
                  </h2>
-                 <button 
-                   onClick={() => setShowResumeEditor(!showResumeEditor)}
-                   className="text-sm font-semibold text-blue-600 hover:text-blue-800 underline decoration-blue-300 hover:decoration-blue-800"
-                 >
-                   {showResumeEditor ? 'Cancel' : 'Paste Resume Text'}
-                 </button>
+                 {isParsing && <span className="text-xs text-blue-600 font-bold animate-pulse">Processing...</span>}
              </div>
              
              {!showResumeEditor ? (
-                 <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                 <div className="flex flex-col gap-4">
                      <p className="text-sm text-slate-600">
-                        Instantly fill your profile by parsing your resume text with Gemini AI.
+                        Auto-fill your profile by uploading your resume or pasting the text.
                      </p>
-                     <button 
-                        onClick={() => setShowResumeEditor(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 font-bold shadow-sm transition-all whitespace-nowrap"
-                     >
-                        <PenTool size={16} /> Open Editor
-                     </button>
+                     
+                     <div className="flex flex-wrap items-center gap-3">
+                        {/* File Upload Button */}
+                        <button 
+                           onClick={() => resumeFileInputRef.current?.click()}
+                           disabled={isParsing}
+                           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+                        >
+                           {isParsing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+                           Upload Resume
+                        </button>
+                        <input 
+                           type="file" 
+                           ref={resumeFileInputRef}
+                           onChange={handleResumeFileChange}
+                           accept=".pdf,.doc,.docx,.txt,image/*"
+                           className="hidden"
+                        />
+
+                        <span className="text-slate-400 font-medium text-sm">or</span>
+
+                        {/* Text Editor Button */}
+                        <button 
+                           onClick={() => setShowResumeEditor(true)}
+                           disabled={isParsing}
+                           className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 font-bold shadow-sm transition-all whitespace-nowrap"
+                        >
+                           <PenTool size={16} /> Paste Text
+                        </button>
+                     </div>
+                     {formData.resumeName && (
+                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-800 text-xs font-bold rounded-lg border border-green-200 self-start">
+                           <FileText size={12} /> Parsed: {formData.resumeName}
+                        </div>
+                     )}
                  </div>
              ) : (
                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
@@ -179,12 +239,12 @@ export const ProfileTab: React.FC<ProfileTabProps> = ({ profile, onSave }) => {
                            Cancel
                         </button>
                         <button 
-                           onClick={handleResumeParse}
+                           onClick={handleResumeTextParse}
                            disabled={isParsing || !resumeText.trim()}
                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold shadow-md transition-all active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
                         >
                            {isParsing ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
-                           {isParsing ? 'Parsing with AI...' : 'Parse Resume'}
+                           {isParsing ? 'Parsing with AI...' : 'Parse Text'}
                         </button>
                     </div>
                  </div>

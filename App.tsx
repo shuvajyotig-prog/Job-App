@@ -5,7 +5,8 @@ import { SearchTab } from './components/SearchTab';
 import { JobDetailPanel } from './components/JobDetailPanel';
 import { ProfileTab } from './components/ProfileTab';
 import { CareerFeedTab } from './components/CareerFeedTab';
-import { Bookmark, Search, UserCircle, Newspaper } from 'lucide-react'; 
+import { CoachTab } from './components/CoachTab';
+import { Bookmark, Search, UserCircle, Newspaper, Bot } from 'lucide-react'; 
 import { JobCard } from './components/JobCard';
 import { VoiceWidget } from './components/VoiceWidget';
 
@@ -92,7 +93,7 @@ const App: React.FC = () => {
       />
 
       <main className="flex-1 min-w-0 h-screen overflow-y-auto custom-scrollbar relative">
-        <div className="p-4 md:p-8 max-w-7xl mx-auto">
+        <div className={`h-full ${view === 'coach' ? 'p-0' : 'p-4 md:p-8 max-w-7xl mx-auto'}`}>
           
           {view === 'search' && (
             <SearchTab 
@@ -105,6 +106,10 @@ const App: React.FC = () => {
 
           {view === 'feed' && (
              <CareerFeedTab />
+          )}
+
+          {view === 'coach' && (
+             <CoachTab userProfile={userProfile} />
           )}
 
           {view === 'profile' && (
@@ -135,27 +140,35 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      <VoiceWidget onSearch={handleVoiceSearch} />
+      {/* Show global voice widget unless in coach mode, where it has its own input */}
+      {view !== 'coach' && <VoiceWidget onSearch={handleVoiceSearch} />}
 
       {/* Mobile Nav */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-4 py-2 flex justify-between items-center shadow-lg">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-2 py-2 flex justify-between items-center shadow-lg">
          <button 
            onClick={() => setView('search')} 
-           className={`flex flex-col items-center p-2 rounded-lg ${view === 'search' ? 'text-blue-600' : 'text-slate-400'}`}
+           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'search' ? 'text-blue-600' : 'text-slate-400'}`}
          >
            <Search size={22} />
            <span className="text-[10px] font-medium mt-1">Search</span>
          </button>
          <button 
            onClick={() => setView('feed')} 
-           className={`flex flex-col items-center p-2 rounded-lg ${view === 'feed' ? 'text-blue-600' : 'text-slate-400'}`}
+           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'feed' ? 'text-blue-600' : 'text-slate-400'}`}
          >
            <Newspaper size={22} />
            <span className="text-[10px] font-medium mt-1">Feed</span>
          </button>
          <button 
+           onClick={() => setView('coach')} 
+           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'coach' ? 'text-blue-600' : 'text-slate-400'}`}
+         >
+           <Bot size={22} />
+           <span className="text-[10px] font-medium mt-1">Coach</span>
+         </button>
+         <button 
            onClick={() => setView('saved')} 
-           className={`flex flex-col items-center p-2 rounded-lg ${view === 'saved' ? 'text-blue-600' : 'text-slate-400'} relative`}
+           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'saved' ? 'text-blue-600' : 'text-slate-400'} relative`}
          >
            <Bookmark size={22} />
            {savedJobs.length > 0 && (
@@ -165,7 +178,7 @@ const App: React.FC = () => {
          </button>
          <button 
            onClick={() => setView('profile')} 
-           className={`flex flex-col items-center p-2 rounded-lg ${view === 'profile' ? 'text-blue-600' : 'text-slate-400'}`}
+           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'profile' ? 'text-blue-600' : 'text-slate-400'}`}
          >
             {userProfile.avatarUrl ? (
                <div className="w-6 h-6 rounded-full overflow-hidden mb-1 border border-slate-200">
