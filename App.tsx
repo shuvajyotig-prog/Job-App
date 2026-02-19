@@ -9,6 +9,7 @@ import { CoachTab } from './components/CoachTab';
 import { Bookmark, Search, UserCircle, Newspaper, Bot } from 'lucide-react'; 
 import { JobCard } from './components/JobCard';
 import { VoiceWidget } from './components/VoiceWidget';
+import { FraudHoneypotAgent } from './components/FraudHoneypotAgent';
 import { LoginPage } from './components/LoginPage';
 import { TopBar } from './components/TopBar';
 import { authService } from './services/authService';
@@ -160,6 +161,9 @@ const App: React.FC = () => {
 
       {/* Show global voice widget unless in coach mode, where it has its own input */}
       {view !== 'coach' && <VoiceWidget onSearch={handleVoiceSearch} />}
+
+      {/* Fraud Honeypot Agent - always available for job scam detection */}
+      <FraudHoneypotAgent />
 
       {/* Mobile Nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-2 py-2 flex justify-between items-center shadow-lg">
