@@ -6,9 +6,11 @@ import { JobDetailPanel } from './components/JobDetailPanel';
 import { ProfileTab } from './components/ProfileTab';
 import { CareerFeedTab } from './components/CareerFeedTab';
 import { CoachTab } from './components/CoachTab';
-import { Bookmark, Search, UserCircle, Newspaper, Bot } from 'lucide-react'; 
+import { Bookmark, Search, UserCircle, Newspaper, Bot, ShieldAlert } from 'lucide-react';
 import { JobCard } from './components/JobCard';
 import { VoiceWidget } from './components/VoiceWidget';
+import { FraudHoneypotAgent } from './components/FraudHoneypotAgent';
+import { HoneypotDashboard } from './components/HoneypotDashboard';
 import { LoginPage } from './components/LoginPage';
 import { TopBar } from './components/TopBar';
 import { authService } from './services/authService';
@@ -111,7 +113,7 @@ const App: React.FC = () => {
           onProfileClick={() => setView('profile')} 
         />
 
-        <div className={`flex-1 ${view === 'coach' ? 'p-0' : 'p-4 md:p-8 max-w-7xl mx-auto w-full'}`}>
+        <div className={`flex-1 min-h-0 ${view === 'coach' || view === 'honeypot' ? 'p-0 flex flex-col' : 'p-4 md:p-8 max-w-7xl mx-auto w-full'}`}>
           
           {view === 'search' && (
             <SearchTab 
@@ -133,6 +135,8 @@ const App: React.FC = () => {
           {view === 'profile' && (
              <ProfileTab profile={userProfile} onSave={handleSaveProfile} />
           )}
+
+          {view === 'honeypot' && <HoneypotDashboard />}
 
           {view === 'saved' && (
             <div className="max-w-4xl mx-auto">
@@ -158,8 +162,9 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Show global voice widget unless in coach mode, where it has its own input */}
-      {view !== 'coach' && <VoiceWidget onSearch={handleVoiceSearch} />}
+      {/* Floating widgets — hidden on honeypot dashboard (full-screen mode) */}
+      {view !== 'coach' && view !== 'honeypot' && <VoiceWidget onSearch={handleVoiceSearch} />}
+      {view !== 'honeypot' && <FraudHoneypotAgent />}
 
       {/* Mobile Nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-2 py-2 flex justify-between items-center shadow-lg">
@@ -194,8 +199,8 @@ const App: React.FC = () => {
            )}
            <span className="text-[10px] font-medium mt-1">Saved</span>
          </button>
-         <button 
-           onClick={() => setView('profile')} 
+         <button
+           onClick={() => setView('profile')}
            className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'profile' ? 'text-blue-600' : 'text-slate-400'}`}
          >
             {userProfile.avatarUrl ? (
@@ -206,6 +211,13 @@ const App: React.FC = () => {
                <UserCircle size={22} />
             )}
            <span className="text-[10px] font-medium mt-1">Profile</span>
+         </button>
+         <button
+           onClick={() => setView('honeypot')}
+           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'honeypot' ? 'text-amber-500' : 'text-slate-400'}`}
+         >
+           <ShieldAlert size={22} />
+           <span className="text-[10px] font-medium mt-1">Sentinel</span>
          </button>
       </div>
 

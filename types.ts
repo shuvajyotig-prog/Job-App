@@ -21,7 +21,7 @@ export interface JobCategory {
   jobs: Job[];
 }
 
-export type ViewState = 'search' | 'saved' | 'feed' | 'profile' | 'coach';
+export type ViewState = 'search' | 'saved' | 'feed' | 'profile' | 'coach' | 'honeypot';
 
 export interface ChatMessage {
   id: string;
