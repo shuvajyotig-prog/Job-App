@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Compass, Bookmark, Zap, Newspaper, Bot, LogOut } from 'lucide-react';
+import { Compass, Bookmark, Zap, Newspaper, Bot, LogOut, ShieldAlert } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -25,6 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, sav
     { id: 'feed', label: 'Career Feed', icon: Newspaper },
     { id: 'coach', label: 'AI Coach', icon: Bot },
     { id: 'saved', label: 'Stashed', icon: Bookmark, badge: savedCount },
+    { id: 'honeypot', label: 'Fraud Sentinel', icon: ShieldAlert },
   ];
 
   return (
