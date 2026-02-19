@@ -9,8 +9,8 @@ interface TopBarProps {
 
 export const TopBar: React.FC<TopBarProps> = ({ userAvatar, userName, onProfileClick }) => {
   return (
-    <div className="absolute top-4 right-4 md:top-6 md:right-8 z-30 flex items-center gap-3 pointer-events-none">
-      <div className="pointer-events-auto flex items-center gap-3">
+    <div className="w-full flex justify-end items-center p-4 md:p-6 pb-0 z-30">
+      <div className="flex items-center gap-3">
         <button 
           onClick={onProfileClick}
           className="flex items-center gap-3 bg-white pl-4 pr-2 py-2 rounded-full border-2 border-neo-black shadow-neo hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all group"

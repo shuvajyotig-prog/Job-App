@@ -103,17 +103,15 @@ const App: React.FC = () => {
         onLogout={handleLogout}
       />
 
-      <main className="flex-1 min-w-0 h-screen overflow-y-auto custom-scrollbar relative">
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto custom-scrollbar relative flex flex-col">
         {/* Top Bar with Profile & Settings */}
-        {view !== 'coach' && (
-           <TopBar 
-             userAvatar={userProfile.avatarUrl} 
-             userName={userProfile.name} 
-             onProfileClick={() => setView('profile')} 
-           />
-        )}
+        <TopBar 
+          userAvatar={userProfile.avatarUrl} 
+          userName={userProfile.name} 
+          onProfileClick={() => setView('profile')} 
+        />
 
-        <div className={`h-full ${view === 'coach' ? 'p-0' : 'p-4 md:p-8 max-w-7xl mx-auto'}`}>
+        <div className={`flex-1 ${view === 'coach' ? 'p-0' : 'p-4 md:p-8 max-w-7xl mx-auto w-full'}`}>
           
           {view === 'search' && (
             <SearchTab 
