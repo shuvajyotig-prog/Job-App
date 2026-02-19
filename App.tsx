@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ViewState, Job, UserProfile, VoiceSearchParams } from './types';
 import { Sidebar } from './components/Sidebar';
 import { SearchTab } from './components/SearchTab';
@@ -9,6 +9,9 @@ import { CoachTab } from './components/CoachTab';
 import { Bookmark, Search, UserCircle, Newspaper, Bot } from 'lucide-react'; 
 import { JobCard } from './components/JobCard';
 import { VoiceWidget } from './components/VoiceWidget';
+import { LoginPage } from './components/LoginPage';
+import { TopBar } from './components/TopBar';
+import { authService } from './services/authService';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('search');
@@ -18,22 +21,17 @@ const App: React.FC = () => {
   // Store voice parameters to trigger search in SearchTab
   const [voiceParams, setVoiceParams] = useState<VoiceSearchParams | null>(null);
   
-  const [userProfile, setUserProfile] = useState<UserProfile>({
-    name: 'Arjun Mehta',
-    currentRole: 'Senior Frontend Engineer',
-    bio: 'Passionate UI/UX specialist building scalable web apps. Looking for challenging roles in Bangalore or Remote.',
-    education: 'B.Tech in Computer Science, IIT Bombay (2018)',
-    experienceSummary: '5 years of experience in React ecosystem. Led a team of 4 at a fintech startup.',
-    skills: ['React', 'TypeScript', 'Next.js', 'Tailwind CSS', 'GraphQL'],
-    yearsExperience: 5,
-    preferences: {
-      remote: false,
-      minSalary: 1500000, // 15 LPA
-      locations: ['Bangalore', 'Mumbai']
-    },
-    avatarUrl: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80',
-    dislikedJobs: [] // Init
-  });
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(authService.getCurrentUser());
+
+  const handleLogin = (user: UserProfile) => {
+    setUserProfile(user);
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setUserProfile(null);
+    setView('search'); // Reset view
+  };
 
   const handleJobClick = (job: Job) => {
     setSelectedJob(job);
@@ -54,11 +52,13 @@ const App: React.FC = () => {
   };
 
   const handleDislikeJob = (job: Job) => {
+    if (!userProfile) return;
+    
     // 1. Update user profile so AI knows to avoid this
-    setUserProfile(prev => ({
+    setUserProfile(prev => prev ? ({
       ...prev,
       dislikedJobs: [...(prev.dislikedJobs || []), { title: job.title, company: job.company }]
-    }));
+    }) : null);
 
     // 2. Remove from saved if it was there
     setSavedJobs(prev => prev.filter(j => j.id !== job.id));
@@ -71,6 +71,15 @@ const App: React.FC = () => {
 
   const handleSaveProfile = (updatedProfile: UserProfile) => {
     setUserProfile(updatedProfile);
+    // Also update in local storage if it's the current user
+    // In a real app, this would be an API call
+    const currentUser = authService.getCurrentUser();
+    if (currentUser) {
+       // We need to merge with existing auth data (email/pass) which we don't have here
+       // For this demo, we just update the profile part in memory. 
+       // To persist, we'd need to update authService to support profile updates.
+       // For now, let's just update state.
+    }
   };
 
   const handleVoiceSearch = (params: VoiceSearchParams) => {
@@ -80,6 +89,10 @@ const App: React.FC = () => {
 
   const isSaved = (job: Job) => savedJobs.some(j => j.id === job.id);
 
+  if (!userProfile) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
   return (
     <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
       
@@ -87,12 +100,19 @@ const App: React.FC = () => {
         currentView={view} 
         onChangeView={setView} 
         savedCount={savedJobs.length}
-        userName={userProfile.name}
-        userAvatar={userProfile.avatarUrl}
-        userRole={userProfile.currentRole}
+        onLogout={handleLogout}
       />
 
       <main className="flex-1 min-w-0 h-screen overflow-y-auto custom-scrollbar relative">
+        {/* Top Bar with Profile & Settings */}
+        {view !== 'coach' && (
+           <TopBar 
+             userAvatar={userProfile.avatarUrl} 
+             userName={userProfile.name} 
+             onProfileClick={() => setView('profile')} 
+           />
+        )}
+
         <div className={`h-full ${view === 'coach' ? 'p-0' : 'p-4 md:p-8 max-w-7xl mx-auto'}`}>
           
           {view === 'search' && (
