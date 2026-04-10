@@ -2,7 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Job, JobCategory, SearchFilters, UserProfile } from "../types";
 import { searchJobsLocal, getTrendingCategoriesLocal } from "./searchEngine";
 
-const apiKey = process.env.API_KEY || '';
+const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 // --- RAG IMPLEMENTATION ---

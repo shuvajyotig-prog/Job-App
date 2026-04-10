@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { Compass, Bookmark, Zap, Newspaper, Bot, LogOut, ShieldAlert } from 'lucide-react';
+import { Compass, Bookmark, Zap, Newspaper, Bot, LogOut, UserCircle } from 'lucide-react';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -25,7 +25,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, sav
     { id: 'feed', label: 'Career Feed', icon: Newspaper },
     { id: 'coach', label: 'AI Coach', icon: Bot },
     { id: 'saved', label: 'Stashed', icon: Bookmark, badge: savedCount },
-    { id: 'honeypot', label: 'Fraud Sentinel', icon: ShieldAlert },
+    { id: 'profile', label: 'My Vibe', icon: UserCircle },
   ];
 
   return (
@@ -70,13 +70,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onChangeView, sav
            })}
         </nav>
 
-        <div className="p-4 border-t-2 border-neo-black bg-slate-50 shrink-0">
+        <div className="p-4 border-t-2 border-neo-black bg-slate-50 shrink-0 space-y-2">
            <button 
              onClick={onLogout}
              className="w-full flex items-center justify-center gap-2 text-sm font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 py-3 rounded-xl transition-all border-2 border-transparent hover:border-red-200 group"
            >
              <LogOut size={18} className="group-hover:translate-x-[-2px] transition-transform" />
              Sign Out
+           </button>
+
+           <button 
+             onClick={() => {
+                if(window.confirm('Reset all app data? This will clear your profile and saved searches.')) {
+                    localStorage.clear();
+                    window.location.reload();
+                }
+             }}
+             className="w-full text-[10px] uppercase tracking-wider font-bold text-slate-400 hover:text-red-500 py-1 transition-colors"
+           >
+             Reset App Data
            </button>
         </div>
       </div>

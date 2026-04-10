@@ -562,8 +562,8 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
             </div>
 
             {loading ? (
-              <div className="grid gap-6">
-                 {[1, 2, 3].map(i => (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {[1, 2, 3, 4].map(i => (
                    <div key={i} className="bg-white p-6 rounded-2xl border-2 border-neo-black shadow-sm animate-pulse">
                       <div className="flex gap-4">
                          <div className="w-14 h-14 bg-slate-200 rounded-xl border-2 border-slate-300"></div>
@@ -577,12 +577,12 @@ export const SearchTab: React.FC<SearchTabProps> = ({ onJobClick, userProfile, e
                  ))}
               </div>
             ) : (
-              <div className="grid gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {jobs.map(job => (
                   <JobCard key={job.id} job={job} onClick={onJobClick} onDislike={handleDislikeLocal} />
                 ))}
                 {jobs.length === 0 && hasSearched && (
-                  <div className="text-center py-24 bg-white rounded-[2rem] border-2 border-neo-black border-dashed">
+                  <div className="col-span-1 md:col-span-2 text-center py-24 bg-white rounded-[2rem] border-2 border-neo-black border-dashed">
                      <div className="bg-acid w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-2 border-neo-black shadow-neo">
                         <Briefcase className="text-neo-black" size={32} />
                      </div>

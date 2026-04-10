@@ -8,7 +8,7 @@ interface VoiceWidgetProps {
   onSearch: (params: VoiceSearchParams) => void;
 }
 
-const apiKey = process.env.API_KEY || '';
+const apiKey = process.env.GEMINI_API_KEY || '';
 const ai = new GoogleGenAI({ apiKey });
 
 export const VoiceWidget: React.FC<VoiceWidgetProps> = ({ onSearch }) => {
