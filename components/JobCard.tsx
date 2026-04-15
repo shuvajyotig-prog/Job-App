@@ -24,7 +24,7 @@ export const JobCard: React.FC<JobCardProps> = ({ job, onClick, onDislike, featu
         border-2 border-neo-black 
         transition-all duration-200 ease-in-out
         hover:shadow-neo hover:-translate-y-1 hover:-translate-x-1
-        ${featured ? 'bg-gradient-to-br from-white to-purple-50' : ''}
+        ${featured ? 'bg-[linear-gradient(110deg,#ffffff,45%,#f3e8ff,55%,#ffffff)] bg-[length:200%_100%] animate-shimmer' : ''}
       `}
     >
       {/* Match Score Badge (AI Feature) */}
