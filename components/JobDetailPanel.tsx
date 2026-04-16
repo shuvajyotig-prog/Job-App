@@ -33,12 +33,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, on
   const [loading, setLoading] = useState(false);
   const [applied, setApplied] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [isCopied, setIsCopied] = useState(false);
 
   useEffect(() => {
     if (job) {
       setApplied(false);
       setStatus(null);
       setFullDescription(null);
+      setIsCopied(false);
       // Simulate checking cache or generating
       if (job.fullDescription) {
         setFullDescription(job.fullDescription);
@@ -66,6 +68,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, on
     setApplied(true);
   };
 
+  const handleShare = async () => {
+    if (!job) return;
+    const shareUrl = `${window.location.origin}?job=${job.id}`;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy link', err);
+    }
+  };
+
   if (!job) return null;
 
   return (
@@ -85,8 +99,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, on
             <X size={20} />
           </button>
           <div className="flex gap-2">
-            <button className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
-              <Share2 size={20} />
+            <button 
+              onClick={handleShare}
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500 relative group"
+              title="Share job"
+            >
+              {isCopied ? <Check size={20} className="text-green-500" /> : <Share2 size={20} />}
+              {isCopied && (
+                <span className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap shadow-lg">
+                  Link copied!
+                </span>
+              )}
             </button>
             <button 
               onClick={() => onSave(job)}
