@@ -6,7 +6,9 @@ import { JobDetailPanel } from './components/JobDetailPanel';
 import { ProfileTab } from './components/ProfileTab';
 import { CareerFeedTab } from './components/CareerFeedTab';
 import { CoachTab } from './components/CoachTab';
+import { CompanyProfileTab } from './components/CompanyProfileTab';
 import { Bookmark, Search, UserCircle, Newspaper, Bot } from 'lucide-react'; 
+
 import { JobCard } from './components/JobCard';
 import { VoiceWidget } from './components/VoiceWidget';
 import { LoginPage } from './components/LoginPage';
@@ -16,6 +18,7 @@ import { authService } from './services/authService';
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('search');
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [savedJobs, setSavedJobs] = useState<Job[]>([]);
   
   // Store voice parameters to trigger search in SearchTab
@@ -39,6 +42,12 @@ const App: React.FC = () => {
 
   const handleCloseDetail = () => {
     setSelectedJob(null);
+  };
+
+  const handleCompanyClick = (companyName: string) => {
+     setSelectedCompany(companyName);
+     setView('company');
+     setSelectedJob(null);
   };
 
   const handleSaveJob = (job: Job) => {
@@ -155,6 +164,15 @@ const App: React.FC = () => {
             </div>
           )}
 
+          {view === 'company' && selectedCompany && (
+            <CompanyProfileTab 
+              companyName={selectedCompany} 
+              onJobClick={handleJobClick} 
+              onDislike={handleDislikeJob}
+              onBack={() => setView('search')}
+            />
+          )}
+
         </div>
       </main>
 
@@ -165,7 +183,7 @@ const App: React.FC = () => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-40 px-2 py-2 flex justify-between items-center shadow-lg">
          <button 
            onClick={() => setView('search')} 
-           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${view === 'search' ? 'text-blue-600' : 'text-slate-400'}`}
+           className={`flex flex-col items-center p-2 rounded-lg min-w-[60px] ${(view === 'search' || view === 'company') ? 'text-blue-600' : 'text-slate-400'}`}
          >
            <Search size={22} />
            <span className="text-[10px] font-medium mt-1">Search</span>
@@ -215,6 +233,7 @@ const App: React.FC = () => {
           onClose={handleCloseDetail} 
           onSave={handleSaveJob}
           isSaved={isSaved(selectedJob)}
+          onCompanyClick={handleCompanyClick}
         />
       )}
 

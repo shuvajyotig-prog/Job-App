@@ -24,11 +24,12 @@ interface JobDetailPanelProps {
   onClose: () => void;
   onSave: (job: Job) => void;
   isSaved: boolean;
+  onCompanyClick?: (companyName: string) => void;
 }
 
 const APPLICATION_STATUSES = ["Applied", "Interviewing", "Offer", "Rejected"];
 
-export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, onSave, isSaved }) => {
+export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, onSave, isSaved, onCompanyClick }) => {
   const [fullDescription, setFullDescription] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [applied, setApplied] = useState(false);
@@ -128,7 +129,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({ job, onClose, on
             </div>
             <div>
                <h1 className="text-2xl font-bold text-slate-900 leading-tight">{job.title}</h1>
-               <p className="text-lg text-slate-600 font-medium mt-1">{job.company}</p>
+               <p 
+                 onClick={() => onCompanyClick?.(job.company)}
+                 className="text-lg text-slate-600 font-medium mt-1 cursor-pointer hover:text-blue-600 hover:underline inline-block"
+               >
+                 {job.company}
+               </p>
                <div className="flex items-center gap-3 text-sm text-slate-500 mt-2">
                  <span>{job.location}</span>
                  <span>•</span>
